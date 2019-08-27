@@ -3,7 +3,9 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
+const logger = require('./logger');
 const { NODE_ENV } = require('./config')
+const bookmarksRouter = require('./bookmarks/bookmarks-router')
 
 const app = express();
 
@@ -13,7 +15,23 @@ app.use(morgan(morganOption))
 app.use(helmet())
 app.use(cors())
 
-console.log(process.env.API_TOKEN);
+app.use(function validateToken(req, res, next) {
+    const authToken = req.get('Authorization')
+    const apiToken = process.env.API_TOKEN
+
+    console.log(authToken);
+    console.log(apiToken);
+
+    if(!authToken || authToken.split(' ')[1] !== apiToken) {
+        logger.error(`Unauthorized request to path: ${req.path}`)
+        return res.status(401).json({ error: 'Unauthorized request' })
+    }
+    
+    next()
+})
+
+app.use(bookmarksRouter);
+
 app.get('/', (req, res) => {
     res.send('Hello, world!')
 })
