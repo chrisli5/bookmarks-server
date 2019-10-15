@@ -5,7 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const logger = require('./logger');
 const { NODE_ENV } = require('./config')
-const bookmarksRouter = require('./bookmarks/bookmarks-router')
+const bookmarksService = require('./bookmarks-service')
 
 const app = express();
 
@@ -15,6 +15,7 @@ app.use(morgan(morganOption))
 app.use(helmet())
 app.use(cors())
 
+/*
 app.use(function validateToken(req, res, next) {
     const authToken = req.get('Authorization')
     const apiToken = process.env.API_TOKEN
@@ -29,11 +30,28 @@ app.use(function validateToken(req, res, next) {
     
     next()
 })
-
-app.use(bookmarksRouter);
+*/
 
 app.get('/', (req, res) => {
     res.send('Hello, world!')
+})
+
+app.get('/bookmarks', (req, res, next) => {
+    const knexInstance = req.app.get('db')
+    bookmarksService.getAllBookmarks(knexInstance)
+        .then(bookmarks => {
+            res.json(bookmarks)
+        })
+        .catch(next)
+})
+
+app.get('/bookmarks/:bookmark_id', (req, res, next) => {
+    const knexInstance = req.app.get('db')
+    bookmarksService.getById(knexInstance, req.params.bookmark_id)
+        .then(bookmark => {
+            res.json(bookmark)
+        })
+        .catch(next)
 })
 
 app.use(function errorHandler(error, req, res, next) {
